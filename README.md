@@ -28,6 +28,18 @@ This repository contains 7 progressive projects that take you from basic telemet
 
 ### Python Dependencies
 
+Create and activate virtual environment:
+```bash
+# Create virtual environment
+python3 -m venv ss_venv
+
+# Activate virtual environment
+# On Linux/WSL:
+source ss_venv/bin/activate
+# On Windows:
+# ss_venv\Scripts\activate
+```
+
 Install required packages:
 ```bash
 pip install -r requirements.txt
