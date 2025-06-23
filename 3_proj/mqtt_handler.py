@@ -14,6 +14,7 @@ class MQTTHandler:
         self.username = os.getenv('MQTT_USERNAME')
         self.password = os.getenv('MQTT_PASSWORD')
         self.use_tls = os.getenv('MQTT_USE_TLS', 'false').lower() == 'true'
+        self.ca_cert_path = os.getenv('MQTT_CA_CERT_PATH')
         self.topic = 'leader/position'
         
         # Initialize MQTT client and set up connection
@@ -22,10 +23,22 @@ class MQTTHandler:
         
         # Configure TLS if enabled in environment variables
         if self.use_tls:
-            # Create an SSLContext that loads system CAs (which include Let's Encrypt)
-            ctx = ssl.create_default_context()
-            self.client.tls_set_context(ctx)
-            print("TLS enabled, using system default CA certificates")
+            # Check for local CA certificate file first (more reliable)
+            ca_cert_path = os.path.join(os.path.dirname(__file__), '..', 'ca.crt')
+            if self.ca_cert_path:
+                ca_cert_path = os.path.join(os.path.dirname(__file__), '..', self.ca_cert_path)
+            
+            if os.path.exists(ca_cert_path):
+                # Use provided CA certificate file
+                self.client.tls_set(ca_certs=ca_cert_path, certfile=None, keyfile=None, 
+                                  cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLS,
+                                  ciphers=None)
+                print(f"TLS enabled, using CA certificate: {ca_cert_path}")
+            else:
+                # Fallback to system default CA certificates
+                ctx = ssl.create_default_context()
+                self.client.tls_set_context(ctx)
+                print("TLS enabled, using system default CA certificates")
         else:
             print("TLS disabled, using non-secure connection")
         

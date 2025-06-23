@@ -15,6 +15,7 @@ MQTT_PORT = int(os.getenv('MQTT_PORT'))
 MQTT_USERNAME = os.getenv('MQTT_USERNAME')
 MQTT_PASSWORD = os.getenv('MQTT_PASSWORD')
 MQTT_USE_TLS = os.getenv('MQTT_USE_TLS', 'false').lower() == 'true'
+MQTT_CA_CERT_PATH = os.getenv('MQTT_CA_CERT_PATH')
 MQTT_TOPIC = 'leader/position'  # Hardcoded topic for this project
 
 # Connect to the vehicle (SITL) using the specified connection string
@@ -65,10 +66,22 @@ client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
 
 # Configure TLS if enabled in environment variables
 if MQTT_USE_TLS:
-    # Create an SSLContext that loads system CAs (which include Let's Encrypt)
-    ctx = ssl.create_default_context()
-    client.tls_set_context(ctx)
-    print("TLS enabled, using system default CA certificates")
+    # Check for local CA certificate file first (more reliable)
+    ca_cert_path = os.path.join(os.path.dirname(__file__), '..', 'ca.crt')
+    if MQTT_CA_CERT_PATH:
+        ca_cert_path = os.path.join(os.path.dirname(__file__), '..', MQTT_CA_CERT_PATH)
+    
+    if os.path.exists(ca_cert_path):
+        # Use provided CA certificate file
+        client.tls_set(ca_certs=ca_cert_path, certfile=None, keyfile=None, 
+                      cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLS,
+                      ciphers=None)
+        print(f"TLS enabled, using CA certificate: {ca_cert_path}")
+    else:
+        # Fallback to system default CA certificates
+        ctx = ssl.create_default_context()
+        client.tls_set_context(ctx)
+        print("TLS enabled, using system default CA certificates")
 else:
     print("TLS disabled, using non-secure connection")
 

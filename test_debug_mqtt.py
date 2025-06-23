@@ -187,32 +187,35 @@ if use_tls:
     
     try:
         import ssl
-        # For Let's Encrypt and other trusted CAs, use system default certificates
-        print("[INFO] Creating SSL context with system default CA certificates")
-        ctx = ssl.create_default_context()
-        client.tls_set_context(ctx)
-        print("[OK] SSL/TLS enabled using system default CA certificates")
-        print("      This includes Let's Encrypt and other trusted CAs")
         
-        if ca_cert_path:
-            print(f"[INFO] Ignoring CA cert file '{ca_cert_path}' in favor of system CAs")
+        # Prefer the provided CA certificate file for maximum compatibility
+        if ca_cert_path and os.path.exists(ca_cert_path):
+            print(f"[INFO] Using provided CA certificate file: {ca_cert_path}")
+            client.tls_set(ca_certs=ca_cert_path, certfile=None, keyfile=None, 
+                          cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLS,
+                          ciphers=None)
+            print("[OK] SSL/TLS enabled with provided CA certificate")
+        else:
+            # Fallback to system default CAs (includes Let's Encrypt)
+            print("[INFO] No CA cert file found, using system default CA certificates")
+            ctx = ssl.create_default_context()
+            client.tls_set_context(ctx)
+            print("[OK] SSL/TLS enabled using system default CA certificates")
             
     except Exception as e:
-        print(f"[ERROR] configuring SSL/TLS with system CAs: {e}")
+        print(f"[ERROR] configuring SSL/TLS: {e}")
         
-        # Fallback: try with the provided CA file
-        if ca_cert_path:
-            print(f"\n[ATTEMPTING] Fallback using provided CA file: {ca_cert_path}")
-            try:
-                client.tls_set(ca_certs=ca_cert_path, certfile=None, keyfile=None, 
-                              cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLS,
-                              ciphers=None)
-                print("[OK] SSL/TLS enabled with provided CA certificate")
-            except Exception as e2:
-                print(f"[ERROR] CA file also failed: {e2}")
-                sys.exit(1)
-        else:
-            print("[ERROR] No fallback options available")
+        # Final fallback: try with relaxed verification for debugging
+        print("\n[ATTEMPTING] Final fallback with relaxed certificate verification...")
+        try:
+            client.tls_set(ca_certs=None, certfile=None, keyfile=None, 
+                          cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLS,
+                          ciphers=None)
+            client.tls_insecure_set(True)
+            print("[OK] SSL/TLS enabled with relaxed verification (development mode)")
+            print("      WARNING: This disables certificate validation!")
+        except Exception as e2:
+            print(f"[ERROR] even relaxed SSL/TLS failed: {e2}")
             sys.exit(1)
 else:
     print("MQTT_USE_TLS=false - using plain text connection")
