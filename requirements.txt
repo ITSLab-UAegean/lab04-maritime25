@@ -1,0 +1,7 @@
+dronekit==2.9.2
+future==1.0.0
+lxml==5.3.0
+monotonic==1.6
+paho-mqtt==2.1.0
+pymavlink==2.4.41
+python-dotenv==1.0.1

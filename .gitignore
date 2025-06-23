@@ -1,0 +1,16 @@
+# Python virtual environment
+/ss_venv/
+venv/
+*.venv
+
+# Python cache
+**pycache**/
+
+# Environment variables
+.env
+
+# Test files and old certificates
+old_ca.crt
+test_env.py
+test_mqtt.py
+test_mqtt_secure.py
