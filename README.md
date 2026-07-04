@@ -24,7 +24,7 @@ This repository contains 8 progressive projects that take you from basic telemet
 
 - **WSL2** (Windows Subsystem for Linux) or native Linux environment
 - **ArduPilot SITL** (Software In The Loop) simulator
-- **Mission Planner** for ground control and visualization
+- **Mission Planner** or **QGroundControl** for ground control and visualization
 - **Python 3.8+** with virtual environment support
 
 ### Python Dependencies
@@ -97,9 +97,9 @@ sim_vehicle.py -v Rover --instance 1 --sysid 2 -L Syros2 \
 
 On native Linux, macOS, or mirrored-mode WSL2, replace `[WINDOWS_HOST_IP]` with `127.0.0.1`. The `boat.parm` parameter file and the SITL working folders come from Lab 03; see the Lab 03 notes if you skipped that setup.
 
-### 4. Mission Planner Integration
+### 4. Ground Station Integration
 
-Connect Mission Planner to UDP port 14550 to visualize all vehicles simultaneously with unique system IDs.
+Connect Mission Planner or QGroundControl to UDP port 14550 to visualize all vehicles simultaneously with unique system IDs (both listen there by default).
 
 ## Project Structure
 
