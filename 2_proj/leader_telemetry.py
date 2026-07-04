@@ -19,7 +19,7 @@ MQTT_CA_CERT_PATH = os.getenv('MQTT_CA_CERT_PATH')
 MQTT_TOPIC = 'leader/position'  # Hardcoded topic for this project
 
 # Connect to the vehicle (SITL) using the specified connection string
-connection_string = 'udp:127.0.0.1:14550'
+connection_string = 'udp:127.0.0.1:14551'
 print(f"Connecting to vehicle on: {connection_string}")
 
 # Establish a connection to the vehicle

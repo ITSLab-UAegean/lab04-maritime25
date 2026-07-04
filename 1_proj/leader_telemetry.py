@@ -1,9 +1,9 @@
-from dronekit import connect, VehicleMode
+from dronekit import connect
 import time
 from datetime import datetime
 
 # Connect to the vehicle (SITL) using the specified connection string
-connection_string = 'udp:127.0.0.1:14550'
+connection_string = 'udp:127.0.0.1:14551'
 print(f"Connecting to vehicle on: {connection_string}")
 
 # Establish a connection to the vehicle

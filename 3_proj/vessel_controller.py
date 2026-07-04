@@ -2,7 +2,7 @@ from dronekit import connect
 from datetime import datetime
 
 class VesselController:
-    def __init__(self, connection_string='udp:127.0.0.1:14550'):
+    def __init__(self, connection_string='udp:127.0.0.1:14551'):
         # Initialize the connection to the vehicle
         print(f"Connecting to vehicle on: {connection_string}")
         self.vehicle = connect(connection_string, wait_ready=True)
