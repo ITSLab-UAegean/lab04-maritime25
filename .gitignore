@@ -4,7 +4,7 @@ venv/
 *.venv
 
 # Python cache
-**pycache**/
+__pycache__/
 
 # Environment variables
 .env

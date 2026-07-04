@@ -1,11 +1,11 @@
-# Maritime Informatics & Robotics Summer School - 2025
+# Maritime Informatics & Robotics Summer School - 2026
 
 
 A comprehensive hands-on workshop for learning autonomous vessel programming using Python, DroneKit, and ArduPilot Rover firmware configured for maritime applications (FRAME_CLASS=2).
 
 ## Lab04 Code Repository
 
-This repository contains 7 progressive projects that take you from basic telemetry reading to implementing autonomous multi-vessel coordination systems. Each project builds upon the previous one, introducing new concepts while maintaining a professional software architecture.
+This repository contains 8 progressive projects that take you from basic telemetry reading to implementing autonomous multi-vessel coordination systems. Each project builds upon the previous one, introducing new concepts while maintaining a professional software architecture.
 
 ### Learning Progression
 
@@ -16,6 +16,7 @@ This repository contains 7 progressive projects that take you from basic telemet
 - **Project 5**: Publisher-subscriber communication with JSON messaging
 - **Project 6**: Command processing for remote vessel control
 - **Project 7**: Autonomous following behavior and coordination
+- **Project 8**: Formation keeping (station keeping relative to the scout's heading)
 
 ## Prerequisites
 
@@ -57,8 +58,10 @@ For real deployment after simulation:
 ### 1. Clone Repository
 
 ```bash
-git clone <repository-url>
-cd lab04-companion/code
+mkdir -p ~/lab04-companion
+cd ~/lab04-companion
+git clone https://github.com/ITSLab-UAegean/lab04-maritime25.git code
+cd code
 ```
 
 ### 2. Environment Configuration
@@ -71,27 +74,28 @@ cp .env.example .env
 ```
 
 Required environment variables:
-- MQTT broker connection details
-- Role-specific credentials (scout, team1, team2, team3)
-- Connection strings for SITL instances
-- TLS certificate configuration
+- MQTT broker address and team login (provided at the session)
+- `TEAM_NS` / `FLEET_NS`: your team id and fleet topic prefix (team + surname), keeping concurrent fleets separated on the shared broker
+- Per-role topics and SITL connection strings (scout, vessel1, vessel2, vessel3)
+- Optional TLS settings (the session runs plain MQTT on port 1883)
 
 ### 3. SITL Setup
 
-Each project requires running ArduPilot SITL instances. Basic setup:
+Each project requires running ArduPilot SITL instances. The convention throughout: the standard port 14550 belongs to the graphical ground station, and each boat's Python reads a private port, the boat's instance default + 1 (scout 14551, vessel1 14561, and so on). Every boat launches with two `--out` flags:
 
 ```bash
 # Scout vehicle
 sim_vehicle.py -v Rover -L Syros \
---add-param-file=/path/to/boat.parm \
---out=udp:127.0.0.1:14550 --console --map
+  --add-param-file=$HOME/maritime26/custom-parms/boat.parm \
+  --out=udp:[WINDOWS_HOST_IP]:14550 --out=udp:127.0.0.1:14551
 
-# Team vehicle (for multi-vessel projects)
-sim_vehicle.py -v Rover -L Syros2 \
---add-param-file=/path/to/boat.parm \
---instance 1 --console --map --sysid=2 \
---out=udp:127.0.0.1:14560 --out=udp:[WINDOWS_HOST_IP]:14550
+# Follower vehicle (for multi-vessel projects)
+sim_vehicle.py -v Rover --instance 1 --sysid 2 -L Syros2 \
+  --add-param-file=$HOME/maritime26/custom-parms/boat.parm \
+  --out=udp:[WINDOWS_HOST_IP]:14550 --out=udp:127.0.0.1:14561
 ```
+
+On native Linux, macOS, or mirrored-mode WSL2, replace `[WINDOWS_HOST_IP]` with `127.0.0.1`. The `boat.parm` parameter file and the SITL working folders come from Lab 03; see the Lab 03 notes if you skipped that setup.
 
 ### 4. Mission Planner Integration
 
@@ -107,6 +111,7 @@ Connect Mission Planner to UDP port 14550 to visualize all vehicles simultaneous
 ├── 5_proj/           # Publisher-subscriber communication
 ├── 6_proj/           # Command processing
 ├── 7_proj/           # Autonomous following behavior
+├── 8_proj/           # Formation keeping
 ├── .env.example      # Environment template
 ├── ca.crt           # MQTT broker certificate
 ├── requirements.txt  # Python dependencies
@@ -151,7 +156,7 @@ Please check individual README files for each project or your respective detaile
 > **Warning** - Deployment Considerations: The codebase is designed for seamless transition from SITL to real hardware, though field deployment requires additional considerations for network reliability, power management, and environmental conditions.
 
 ### Connection String Changes
-- **SITL**: `udp:127.0.0.1:14550`
+- **SITL**: `udp:127.0.0.1:14551` (the boat's private Python port)
 - **Hardware**: `/dev/pixhawkN` (using udev rules for persistent device naming)
 
 ### udev Rules Setup
@@ -198,7 +203,7 @@ This repository represents a complete educational curriculum. Each project direc
 
 ## License
 
-© 2025, Nikos Goulas, Thomas Kogias, Nikos Sapountzis - [SmartMove Lab](https://smartmove.aegean.gr), University of the Aegean
+© 2026, Nikos Goulas, Thomas Kogias, Nikos Sapountzis - [SmartMove Lab](https://smartmove.aegean.gr), University of the Aegean
 
 Licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 

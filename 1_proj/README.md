@@ -7,13 +7,13 @@
 ### DroneKit Library Fundamentals
 
 ```python
-from dronekit import connect, VehicleMode
+from dronekit import connect
 vehicle = connect(connection_string, wait_ready=True)
 ```
 
 - **DroneKit**: Python library that provides high-level control of ArduPilot vehicles
 - **`wait_ready=True`**: Critical parameter that ensures all vehicle parameters are loaded before proceeding
-- **Connection string format**: `udp:127.0.0.1:14550` connects to SITL (Software In The Loop) simulator
+- **Connection string format**: `udp:127.0.0.1:14551` connects to SITL (Software In The Loop) simulator; the standard 14550 is left to the graphical ground station, the boat's Python reads its own copy on 14551
 
 ### Vehicle Object Properties
 
@@ -49,7 +49,7 @@ finally:
 ## SITL vs Real Hardware
 
 **Current Setup (SITL):**
-- Connection: `udp:127.0.0.1:14550` (local simulator)
+- Connection: `udp:127.0.0.1:14551` (local simulator)
 - Safe environment for learning and testing
 
 **Hardware Setup:**

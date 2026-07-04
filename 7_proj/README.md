@@ -9,7 +9,7 @@
 
 ## Key Concepts
 
-This project represents the culmination of the series, implementing actual autonomous following behavior that enables team vessels to track and follow the scout vessel in real-time.
+This project implements actual autonomous following behavior that enables follower vessels to track and follow the scout vessel in real-time. Project 8 then refines it into formation keeping.
 
 ### Autonomous Following Algorithm
 
@@ -22,7 +22,7 @@ def follow_scout(self, scout_lat, scout_lon, scout_speed):
         scout_lat, scout_lon
     )
     
-    if current_distance < 5:
+    if current_distance < self.safe_follow_distance:
         if self.vehicle.mode.name != "LOITER":
             self.vehicle.mode = VehicleMode("LOITER")
             print("Too close to scout. Loitering to maintain position.")
@@ -30,7 +30,7 @@ def follow_scout(self, scout_lat, scout_lon, scout_speed):
         # Resume following logic
 ```
 
-- **Safety Distance**: Automatically maintains 5-meter minimum distance from scout
+- **Safety Distance**: Automatically keeps a minimum distance from the scout (`SAFE_FOLLOW_DISTANCE`, set in `.env`)
 - **Mode Switching**: Dynamically switches between GUIDED (following) and LOITER (holding position)
 - **Real-time Decision Making**: Continuously evaluates distance and adjusts behavior
 
@@ -81,7 +81,7 @@ if should_update and self.scout_has_moved(scout_lat, scout_lon, scout_speed):
 
 **Message Priority System:**
 ```python
-def subscribe(self, topic_names, callback=None, qos=None):
+def subscribe(self, topic_names, callback, qos=None):
     if 'commands' in topic_name.lower():
         topic_qos = 1  # QoS 1 for commands (guaranteed delivery)
     else:
@@ -139,68 +139,56 @@ def set_guided_mode(self):
 - **State Synchronization**: Following flag tracks autonomous behavior state
 - **DroneKit Integration**: Uses standard ArduPilot vehicle modes
 
-### Enhanced Error Handling
-
-**MQTT Reconnection Logic:**
-```python
-except struct.error:
-    print("Encountered a malformed MQTT message. Attempting to reconnect...")
-    mqtt_handler.client.disconnect()
-    time.sleep(5)
-    try:
-        mqtt_handler.client.reconnect()
-        mqtt_handler.subscribe(topics_to_subscribe, on_message)
-    except Exception as e:
-        print(f"Reconnection failed: {e}")
-```
-
-- **Malformed Message Recovery**: Handles corrupt MQTT data gracefully
-- **Automatic Reconnection**: Attempts to restore MQTT connectivity
-- **Resubscription**: Restores topic subscriptions after reconnection
-- **Graceful Degradation**: Continues operation despite communication issues
-
 ## Running the Code
 
 **Setup** (same SITL configuration as previous projects):
 
-Terminal 1 - Scout SITL and script:
+Terminal 1 - Scout SITL:
 ```bash
-# Start SITL
-cd ~/sitl-test
-sim_vehicle.py -v Rover -L Syros --add-param-file=/home/thomas/custom-parms/boat.parm --out=udp:127.0.0.1:14550 --console --map
+cd ~/maritime26/sitl-test
+sim_vehicle.py -v Rover -L Syros \
+  --add-param-file=$HOME/maritime26/custom-parms/boat.parm \
+  --out=udp:[WINDOWS_HOST_IP]:14550 --out=udp:127.0.0.1:14551
+```
 
-# Run scout script
+Terminal 2 - Vessel1 SITL:
+```bash
+cd ~/maritime26/sitl-test2
+sim_vehicle.py -v Rover --instance 1 --sysid 2 -L Syros2 \
+  --add-param-file=$HOME/maritime26/custom-parms/boat.parm \
+  --out=udp:[WINDOWS_HOST_IP]:14550 --out=udp:127.0.0.1:14561
+```
+
+On native Linux, macOS, or mirrored-mode WSL2, replace `[WINDOWS_HOST_IP]` with `127.0.0.1` (see Project 4). Give both boats their GPS settle time (about half a minute, until the console reports the EKF is using GPS) before sending `follow`; a `follow` before the GPS fix leaves the arming wait stuck and the vessel deaf to further commands.
+
+Terminal 3 - Scout script:
+```bash
 cd ~/lab04-companion/code/7_proj
 python scout.py
 ```
 
-Terminal 2 - Team SITL and script:
+Terminal 4 - Follower script:
 ```bash
-# Start SITL
-cd ~/sitl-test2
-sim_vehicle.py -v Rover -L Syros2 --add-param-file=/home/thomas/custom-parms/boat.parm --instance 1 --console --map --sysid=2 --out=udp:127.0.0.1:14560 --out=udp:[WINDOWS_HOST_IP]:14550
-
-# Run team script
 cd ~/lab04-companion/code/7_proj
-python team.py team1
+python vessel.py vessel1
 ```
 
 **Command Execution:**
 
-Start following:
+Start following (replace `<broker>` with the session broker, and use your own fleet prefix; `-q 1` asks for the QoS 1 guarantee on the publish leg too):
 ```bash
-mosquitto_pub -h smartmove-local.syros.aegean.gr -p 1883 \
+mosquitto_pub -h <broker> -p 1883 \
   -u team1 -P team1 \
-  -t team1/commands \
-  -m '{"command": "follow"}'
+  -t 'team1/yoursurname/vessel1/commands' \
+  -m '{"command": "follow"}' -q 1
 ```
 
 Stop following:
 ```bash
-mosquitto_pub -h smartmove-local.syros.aegean.gr -p 1883 \
+mosquitto_pub -h <broker> -p 1883 \
   -u team1 -P team1 \
-  -t team1/commands \
-  -m '{"command": "stop"}'
+  -t 'team1/yoursurname/vessel1/commands' \
+  -m '{"command": "stop"}' -q 1
 ```
 
 ## What You Will Observe
@@ -213,34 +201,31 @@ Command to start following is issued
 Arming vehicle...
 Vehicle armed.
 Vehicle is in GUIDED mode. Started following.
-Team vessel ready. Waiting for commands...
 ```
 
 **Active Following Behavior:**
 ```
-Distance to scout: 12.34 meters. Mode: FOLLOWING
-Issuing new goto command. Distance to scout: 12.34 meters
-Received message on topic scout/position:
-  Latitude: 37.438788, Longitude: 24.945544
-Distance to scout: 8.56 meters. Mode: FOLLOWING
+Distance to scout: 42.34 meters. Mode: FOLLOWING
+Issuing new goto command. Distance to scout: 42.34 meters
+Distance to scout: 28.56 meters. Mode: FOLLOWING
 ```
 
 **Safety Distance Activation:**
 ```
-Distance to scout: 4.23 meters. Mode: LOITERING
+Distance to scout: 13.23 meters. Mode: LOITERING
 Too close to scout. Loitering to maintain position.
-Distance to scout: 4.15 meters. Mode: LOITERING
+Distance to scout: 13.15 meters. Mode: LOITERING
 ```
 
 **Mission Planner Visualization:**
 - Scout vessel moving under manual or autonomous control
-- Team vessel automatically following with intelligent pathfinding
+- Follower vessel automatically following with intelligent pathfinding
 - Real-time distance maintenance and safety behaviors
 - Mode changes visible in vehicle status displays
 
 ## Key Features
 
-- **Autonomous Navigation**: Team vessels independently navigate to scout position
+- **Autonomous Navigation**: Follower vessels independently navigate to scout position
 - **Safety Distance**: Automatic loitering when too close to scout
 - **Intelligent Following**: Movement detection prevents unnecessary navigation commands
 - **Real-time Response**: Immediate reaction to scout position changes

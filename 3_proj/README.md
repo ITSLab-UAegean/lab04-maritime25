@@ -40,7 +40,7 @@ class MQTTHandler:
 **VesselController Class:**
 ```python
 class VesselController:
-    def __init__(self, connection_string='udp:127.0.0.1:14550'):
+    def __init__(self, connection_string='udp:127.0.0.1:14551'):
         self.vehicle = connect(connection_string, wait_ready=True)
     
     def get_telemetry(self):
@@ -95,7 +95,7 @@ except Exception as e:
 ## SITL vs Real Hardware
 
 **Current Setup (SITL):**
-- Connection: `udp:127.0.0.1:14550` (default in VesselController)
+- Connection: `udp:127.0.0.1:14551` (default in VesselController)
 - Modular design allows easy connection string modification
 
 **Hardware Setup:**

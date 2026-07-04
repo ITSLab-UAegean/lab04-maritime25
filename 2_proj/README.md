@@ -75,7 +75,7 @@ finally:
 ## SITL vs Real Hardware
 
 **Current Setup (SITL):**
-- Connection: `udp:127.0.0.1:14550` (local simulator)
+- Connection: `udp:127.0.0.1:14551` (local simulator)
 - MQTT configuration loaded from `../.env`
 
 **Hardware Setup:**

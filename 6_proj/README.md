@@ -1,28 +1,28 @@
 # Project 6: Command Processing System
 
 **Learning Objectives**:
-- Implement multi-topic MQTT subscription for team vessels
+- Implement multi-topic MQTT subscription for follower vessels
 - Add command processing capabilities for remote vessel control
 - Handle both JSON and plain text command formats
 - Create a foundation for autonomous behavior control
 
 ## Key Concepts
 
-This project extends the publisher-subscriber system from Project 5 by adding command processing capabilities to team vessels, enabling remote control and coordination.
+This project extends the publisher-subscriber system from Project 5 by adding command processing capabilities to follower vessels, enabling remote control and coordination.
 
 ### Multi-Topic Subscription
 
 **Enhanced Subscription Pattern:**
 ```python
 # Create a list of topics to subscribe to
-topics_to_subscribe = ['SCOUT_POSITION_TOPIC', f'{team.upper()}_COMMANDS']
+topics_to_subscribe = ['SCOUT_POSITION_TOPIC', f'{role.upper()}_COMMANDS']
 
 # Subscribe to topics
 mqtt_handler.subscribe(topics_to_subscribe)
 ```
 
-- **Multiple subscriptions**: Team vessels now listen to both scout position and their own command topic
-- **Dynamic topic construction**: Command topics are built based on vessel role (e.g., `team1/commands`)
+- **Multiple subscriptions**: Follower vessels now listen to both scout position and their own command topic
+- **Dynamic topic construction**: Command topics are built based on vessel role (e.g., `${FLEET_NS}/vessel1/commands`)
 - **Centralized subscription**: Single method call handles multiple topic subscriptions
 
 ### Flexible Subscription Handler
@@ -100,14 +100,14 @@ def print_command_message(self, message):
 
 From `.env` file:
 ```
-TEAM1_COMMANDS=team1/commands
-TEAM2_COMMANDS=team2/commands
-TEAM3_COMMANDS=team3/commands
+VESSEL1_COMMANDS=${FLEET_NS}/vessel1/commands
+VESSEL2_COMMANDS=${FLEET_NS}/vessel2/commands
+VESSEL3_COMMANDS=${FLEET_NS}/vessel3/commands
 ```
 
-- **Role-specific channels**: Each team vessel has its own command topic
+- **Role-specific channels**: Each follower vessel has its own command topic
 - **Individual control**: Commands can be sent to specific vessels
-- **Scalable architecture**: Easy to add more team vessels
+- **Scalable architecture**: Easy to add more follower vessels
 
 ## SITL Configuration
 
@@ -123,46 +123,46 @@ cd ~/lab04-companion/code/6_proj
 python scout.py
 ```
 
-Terminal 2 - Team vessel:
+Terminal 2 - Follower vessel:
 ```bash
 cd ~/lab04-companion/code/6_proj
-python team.py team1
+python vessel.py vessel1
 ```
 
 **Command Testing:**
 
-Send commands via MQTT:
+Send commands via MQTT (replace `<broker>` with the session broker, and use your own fleet prefix):
 ```bash
 # JSON format command
-mosquitto_pub -h smartmove-local.syros.aegean.gr -p 1883 \
+mosquitto_pub -h <broker> -p 1883 \
   -u team1 -P team1 \
-  -t team1/commands \
+  -t 'team1/yoursurname/vessel1/commands' \
   -m '{"command": "follow"}'
 
 # Plain text command
-mosquitto_pub -h smartmove-local.syros.aegean.gr -p 1883 \
+mosquitto_pub -h <broker> -p 1883 \
   -u team1 -P team1 \
-  -t team1/commands \
+  -t 'team1/yoursurname/vessel1/commands' \
   -m "stop"
 ```
 
 ## What You Will Observe
 
-**Team Vessel Startup:**
+**Follower Vessel Startup:**
 ```
-Starting team1 vessel...
-TLS enabled, using system default CA certificates
+Starting vessel1 vessel...
+TLS disabled, using non-secure connection
 Successfully connected to MQTT broker
-Subscribed to topic: scout/position
-Subscribed to topic: team1/commands
-Connecting to vehicle on: udp:127.0.0.1:14560
+Subscribed to topic: team1/yoursurname/scout/position
+Subscribed to topic: team1/yoursurname/vessel1/commands
+Connecting to vehicle on: udp:127.0.0.1:14561
 ```
 
 **Position Data Reception:**
 ```
-{"timestamp": "23/06/2025 - 11:45:15", "heading": 180, "ground_speed": 0.00, "latitude": 37.438788, "longitude": 24.945544, "boat": "team1"}
-Successfully published to MQTT topic: team1/position
-Received message on topic scout/position:
+{"timestamp": "23/06/2026 - 11:45:15", "heading": 180, "ground_speed": 0.00, "latitude": 37.438788, "longitude": 24.945544, "boat": "vessel1"}
+Successfully published to MQTT topic: team1/yoursurname/vessel1/position
+Received message on topic team1/yoursurname/scout/position:
   Latitude: 37.438788, Longitude: 24.945544
 ```
 
@@ -174,7 +174,7 @@ Command to start following is issued
 ```
 
 **Key Features:**
-- **Dual subscription**: Team vessels receive both position updates and commands
+- **Dual subscription**: Follower vessels receive both position updates and commands
 - **Command acknowledgment**: Visual confirmation when commands are received
 - **Format flexibility**: Accepts both JSON and plain text command formats
 - **Foundation for automation**: Infrastructure ready for autonomous behavior implementation
