@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from mqtt_handler import MQTTHandler
 from vessel_controller import VesselController
 import json
-import struct
 
 # Load environment variables from the .env file located one directory above
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -58,23 +57,23 @@ def handle_command(command, vessel_controller):
 
 def main():
     # Set up command-line argument parsing
-    parser = argparse.ArgumentParser(description='Team vessel with autonomous follow behavior')
-    parser.add_argument('team', choices=['team1', 'team2', 'team3'], 
-                       help='Team vessel role (team1, team2, or team3)')
-    
+    parser = argparse.ArgumentParser(description='Follower vessel with autonomous follow behavior')
+    parser.add_argument('role', choices=['vessel1', 'vessel2', 'vessel3'],
+                       help='Vessel role (vessel1, vessel2, or vessel3)')
+
     # Parse command-line arguments
     args = parser.parse_args()
-    team = args.team
-    
-    print(f"Starting {team} vessel...")
-    
+    role = args.role
+
+    print(f"Starting {role} vessel...")
+
     try:
-        # Initialize MQTT handler and vessel controller for the specified team
-        vessel_controller = VesselController(team)
-        mqtt_handler = MQTTHandler(team)
-        
+        # Initialize MQTT handler and vessel controller for the specified role
+        vessel_controller = VesselController(role)
+        mqtt_handler = MQTTHandler(role)
+
         # Create a list of topics to subscribe to
-        topics_to_subscribe = ['SCOUT_POSITION_TOPIC', f'{team.upper()}_COMMANDS']
+        topics_to_subscribe = ['SCOUT_POSITION_TOPIC', f'{role.upper()}_COMMANDS']
         
         # Set vessel controller in userdata for callback access
         mqtt_handler.client.user_data_set({'vessel_controller': vessel_controller})
@@ -83,7 +82,7 @@ def main():
         # QoS will be automatically set to 1 for commands, 0 for positions
         mqtt_handler.subscribe(topics_to_subscribe, on_message)
         
-        print("Team vessel ready. Waiting for commands...")
+        print("Vessel ready. Waiting for commands...")
         
         # Main loop to get telemetry data and publish it every 5 seconds
         # Note: MQTT messages are processed automatically by the background thread
@@ -96,17 +95,6 @@ def main():
                 published_payload = mqtt_handler.publish(telemetry_data, qos=0)
                 print(published_payload)
                 
-            except struct.error:
-                print("Encountered a malformed MQTT message. Attempting to reconnect...")
-                mqtt_handler.client.disconnect()
-                time.sleep(5)
-                try:
-                    mqtt_handler.client.reconnect()
-                    mqtt_handler.subscribe(topics_to_subscribe, on_message)
-                except Exception as e:
-                    print(f"Reconnection failed: {e}")
-                    time.sleep(5)  # Wait before retrying
-                
             except Exception as e:
                 print(f"An error occurred in the main loop: {e}")
             
@@ -115,7 +103,7 @@ def main():
             
     except KeyboardInterrupt:
         # Catch keyboard interrupt (Ctrl+C) to exit the script gracefully
-        print("\nShutting down team vessel...")
+        print("\nShutting down vessel...")
         
     except Exception as e:
         # Catch any other errors (missing environment variables, connection failures, etc.)

@@ -61,8 +61,10 @@ class MQTTHandler:
     
     # Function to publish a message to the MQTT broker
     def publish(self, payload):
-        # Add the boat identifier to the payload
-        payload['boat'] = self.username
+        # Add the boat identifier to the payload (the role, not the login:
+        # every boat in a team shares the team login, so the username no
+        # longer identifies the boat)
+        payload['boat'] = self.role.lower()
         
         # Convert the payload to a JSON string
         json_payload = json.dumps(payload)

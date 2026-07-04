@@ -10,23 +10,23 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 def main():
     # Set up command-line argument parsing
-    parser = argparse.ArgumentParser(description='Team vessel with command processing and scout subscription')
-    parser.add_argument('team', choices=['team1', 'team2', 'team3'], 
-                       help='Team vessel role (team1, team2, or team3)')
-    
+    parser = argparse.ArgumentParser(description='Follower vessel with command processing and scout subscription')
+    parser.add_argument('role', choices=['vessel1', 'vessel2', 'vessel3'],
+                       help='Vessel role (vessel1, vessel2, or vessel3)')
+
     # Parse command-line arguments
     args = parser.parse_args()
-    team = args.team
-    
-    print(f"Starting {team} vessel...")
-    
+    role = args.role
+
+    print(f"Starting {role} vessel...")
+
     try:
-        # Initialize MQTT handler and vessel controller for the specified team
-        mqtt_handler = MQTTHandler(team)
-        vessel_controller = VesselController(team)
-        
+        # Initialize MQTT handler and vessel controller for the specified role
+        mqtt_handler = MQTTHandler(role)
+        vessel_controller = VesselController(role)
+
         # Create a list of topics to subscribe to
-        topics_to_subscribe = ['SCOUT_POSITION_TOPIC', f'{team.upper()}_COMMANDS']
+        topics_to_subscribe = ['SCOUT_POSITION_TOPIC', f'{role.upper()}_COMMANDS']
         
         # Subscribe to topics
         mqtt_handler.subscribe(topics_to_subscribe)

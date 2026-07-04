@@ -19,7 +19,11 @@ class VesselController:
         self.last_report_time = 0
         self.report_interval = 3  # Report every 3 seconds
         self.scout_speeds = deque(maxlen=3)  # Store last 3 speed readings
-        
+
+        # Safe follow distance in meters (set in .env): closer to the scout
+        # than this, the vessel loiters instead of pressing on
+        self.safe_follow_distance = float(os.getenv('SAFE_FOLLOW_DISTANCE', 5))
+
         # Get the connection string based on the role
         connection_string = self.get_connection_string()
         
@@ -74,7 +78,7 @@ class VesselController:
     def report_status(self, distance):
         current_time = time.time()
         if current_time - self.last_report_time >= self.report_interval:
-            mode = "LOITERING" if self.following and distance < 5 else \
+            mode = "LOITERING" if self.following and distance < self.safe_follow_distance else \
                    "STOPPED" if not self.following else "FOLLOWING"
             print(f"Distance to scout: {distance:.2f} meters. Mode: {mode}")
             self.last_report_time = current_time
@@ -108,7 +112,7 @@ class VesselController:
         
         if self.following:
             # Check if too close to scout
-            if current_distance < 5:
+            if current_distance < self.safe_follow_distance:
                 if self.vehicle.mode.name != "LOITER":
                     self.vehicle.mode = VehicleMode("LOITER")
                     print("Too close to scout. Loitering to maintain position.")

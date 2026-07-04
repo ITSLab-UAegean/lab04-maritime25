@@ -6,8 +6,8 @@ from vessel_controller import VesselController
 def main():
     # Set up command-line argument parsing
     parser = argparse.ArgumentParser(description='Multi-vessel telemetry system')
-    parser.add_argument('role', choices=['scout', 'team1', 'team2', 'team3'], 
-                       help='Vessel role (scout, team1, team2, or team3)')
+    parser.add_argument('role', choices=['scout', 'vessel1', 'vessel2', 'vessel3'],
+                       help='Vessel role (scout, vessel1, vessel2, or vessel3)')
     
     # Parse command-line arguments
     args = parser.parse_args()

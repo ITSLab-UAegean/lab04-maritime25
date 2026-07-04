@@ -62,8 +62,10 @@ class MQTTHandler:
     
     # Function to publish a message to the MQTT broker
     def publish(self, payload, qos=0):
-        # Add the boat identifier to the payload
-        payload['boat'] = self.username
+        # Add the boat identifier to the payload (the role, not the login:
+        # every boat in a team shares the team login, so the username no
+        # longer identifies the boat)
+        payload['boat'] = self.role.lower()
         
         # Convert the payload to a JSON string
         json_payload = json.dumps(payload)
@@ -79,7 +81,7 @@ class MQTTHandler:
         # Return the actual payload that was sent
         return json_payload
     
-    def subscribe(self, topic_names, callback=None, qos=None):
+    def subscribe(self, topic_names, callback, qos=None):
         # Handle single topic or list of topics
         if isinstance(topic_names, str):
             topic_names = [topic_names]
@@ -102,50 +104,12 @@ class MQTTHandler:
                 topic_qos = qos
             
             self.client.subscribe(topic, qos=topic_qos)
-            
-            # Use custom callback if provided, otherwise use built-in callback
-            if callback:
-                self.client.message_callback_add(topic, callback)
-            else:
-                self.client.message_callback_add(topic, self.on_message)
-            
+
+            # Route this topic's messages to the provided callback
+            self.client.message_callback_add(topic, callback)
+
             print(f"Subscribed to topic: {topic} (QoS={topic_qos})")
-    
-    def on_message(self, client, userdata, msg):
-        # Built-in callback for backward compatibility (Project 6 style)
-        try:
-            payload = json.loads(msg.payload.decode())
-            print(f"Received message on topic {msg.topic}:")
-            
-            if 'latitude' in payload and 'longitude' in payload:
-                print(f"  Latitude: {payload['latitude']}, Longitude: {payload['longitude']}")
-            elif msg.topic.lower().endswith('commands'):
-                command = payload.get('command', '').lower()
-                self.handle_command(command)
-            else:
-                print(f"  Payload: {payload}")
-                
-        except json.JSONDecodeError:
-            # If JSON parsing fails, treat it as plain text command if from command topic
-            if msg.topic.lower().endswith('commands'):
-                command = msg.payload.decode().strip().lower()
-                self.handle_command(command)
-            else:
-                print(f"Received invalid JSON message on topic {msg.topic}: {msg.payload.decode()}")
-    
-    def handle_command(self, command):
-        if command == "follow":
-            self.print_command_message("Command to start following is issued")
-        elif command == "stop":
-            self.print_command_message("Command to stop following is issued")
-        else:
-            self.print_command_message(f"Unknown command received: {command}")
-    
-    def print_command_message(self, message):
-        print("\n" + "*" * 50)
-        print(message)
-        print("*" * 50 + "\n")
-    
+
     # Function to disconnect the MQTT client
     def disconnect(self):
         self.client.loop_stop()  # Stop the background thread
