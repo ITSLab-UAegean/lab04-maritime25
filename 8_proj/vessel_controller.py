@@ -80,7 +80,7 @@ class VesselController:
             print("Vehicle armed.")
 
     def calculate_distance(self, lat1, lon1, lat2, lon2):
-        # Calculate the great circle distance between two points on earth
+        # Great circle distance in meters between two GPS points (haversine formula)
         R = 6371000  # Earth radius in meters
         lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
 
@@ -110,6 +110,7 @@ class VesselController:
             print(f"Distance to scout: {distance:.2f} meters. Mode: {mode}")
             self.last_report_time = current_time
 
+    # Movement gate: a parked scout's GPS jitter should never trigger a goto
     def scout_has_moved(self, scout_lat, scout_lon, scout_speed):
         if self.last_goto_position is None:
             return True
@@ -149,7 +150,9 @@ class VesselController:
                     self.vehicle.mode = VehicleMode("GUIDED")
                     print("Resuming follow mode.")
 
-                # Determine if we should issue a new goto command
+                # Throttle the gotos: each one interrupts the autopilot's current
+                # path, so re-target only when the last goto has gone stale or
+                # the scout has pulled further ahead
                 should_update = (
                     self.last_goto_position is None or
                     current_time - self.last_goto_time >= 15 or
@@ -174,7 +177,8 @@ class VesselController:
                     self.last_scout_distance = current_distance
 
     def set_guided_mode(self):
-        # Set the vehicle mode to GUIDED and initialize following state
+        # Set GUIDED and open the gate: the gotos themselves are issued in
+        # follow_scout(), once per received scout report
         self.vehicle.mode = VehicleMode("GUIDED")
         while self.vehicle.mode.name != "GUIDED":
             time.sleep(1)
@@ -188,6 +192,7 @@ class VesselController:
             time.sleep(1)
         print("Vehicle is in LOITER mode. Stopped following.")
         self.following = False
+        # Forget the goto history, so a later 'follow' starts fresh
         self.last_scout_distance = None
         self.last_goto_time = None
         self.last_goto_position = None
